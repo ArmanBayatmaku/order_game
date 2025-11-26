@@ -3,6 +3,7 @@ import random
 import pandas as pd
 import os
 import re
+import numpy as np
 
 
 class AnimalSortingGenerator:
@@ -22,54 +23,54 @@ class AnimalSortingGenerator:
                 raise ValueError(f"Column '{col}' is not in dataset.")
 
     def pick_feature(self):
-        return random.choice(self.valid_columns)
+        a = random.choice(self.valid_columns)
+        return a
 
-    def pick_animals(self, n=5, feature = "height"):
-        valid_rows = self.df[self.df[feature].notna()]
-        return valid_rows.sample(n)
+    def pick_animals(self, n=5, feature = "Height (cm)"):
+        sample_rows = self.df.sample(5)
+        sample_rows = sample_rows[["Animal", feature]]
+        wrong_format = 0
+        s = str(sample_rows[feature]).strip().lower()
+        if "varies" or "not applicable" in s:
+            wrong_format = 1
+
+        while wrong_format == 1:
+            sample_rows = self.df.sample(5)
+            sample_rows = sample_rows[["Animal", feature]]
+            s = str(sample_rows[feature]).strip().lower()
+            if "varies" or "not applicable" not in s: 
+                wrong_format = 0
+        return sample_rows
     
 
-    def parse_feature_value(raw):
-        if raw is None:
-            return None
-
-        if not isinstance(raw, str):
-            try:
-                return float(raw)
-            except:
-                return None
-
-        s = raw.strip().lower()
-
+    def parse_feature_value(self, raw, challenge_type):
+        s = str(raw).strip().lower()
         
-        s = s.replace("~", "").replace("approx.", "").replace("approximately", "").strip()
-
-        s = s.replace("–", "-").replace("—", "-")
-
-
         if s.startswith("up to "):
             s = s.replace("up to ", "").strip()
 
-
-        is_months = "month" in s
-        is_days = "day" in s
-
+        is_years = "years" in s
+        is_months = "months" in s
+        is_days = "days" in s
 
         numbers = re.findall(r"\d+\.?\d*", s)
 
-        if not numbers:
-            return None
+        numbers2 = [float(n) for n in numbers]
 
-        numbers = [float(n) for n in numbers]
+        value = np.mean(numbers2)
 
+        if("(days)" in challenge_type):
+            if is_months:
+                value = value * 30.0
+            elif is_years:
+                value = value * 365.0
+        
+        if("(years)" in challenge_type):
+            if is_months:
+                value = value / 12.0
+            elif is_days:
+                value = value / 365.0
 
-        value = np.mean(numbers)
-
-
-        if is_months:
-            value = value / 12.0 
-        elif is_days:
-            value = value / 365.0  
 
         return float(value)
 
@@ -78,12 +79,14 @@ class AnimalSortingGenerator:
 
         feature = self.pick_feature()
         sample = self.pick_animals(5, feature)
+        #parsed_sample = []
 
+        sample[feature] = sample[feature].apply(lambda x: self.parse_feature_value(x, feature))
         animals = []
-        for _, row in sample.iterrows():
+        for _, row in sample.iterrows():   
             animals.append({
-                "name": row["Animal"],          
-                "value": float(row[feature])
+                "name": row["Animal"],         
+                "value": float(row[feature])   
             })
 
         sorted_animals = sorted(animals, key=lambda x: x["value"])
@@ -93,18 +96,13 @@ class AnimalSortingGenerator:
             "feature": feature,
             "order": "ascending",
             "animals": animals,
-            "correct_order": [a["Animal"] for a in sorted_animals],
-            "hints": [
-                "Ascending means smallest to largest.",
-                f"Focus on the '{feature}' values."
-            ]
+            "correct_order": [a["name"] for a in sorted_animals],
         }
 
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(json_data, f, indent=4)
 
         return output_path
-
 
 
 if __name__ == "__main__":

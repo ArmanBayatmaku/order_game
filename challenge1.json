@@ -1,0 +1,34 @@
+{
+    "challenge_type": "animal_sorting",
+    "feature": "Weight (kg)",
+    "order": "ascending",
+    "animals": [
+        {
+            "name": "Asian Elephant",
+            "value": 3500.0
+        },
+        {
+            "name": "Western Gorilla",
+            "value": 125.0
+        },
+        {
+            "name": "African Lion",
+            "value": 185.0
+        },
+        {
+            "name": "Emperor Penguin",
+            "value": 33.5
+        },
+        {
+            "name": "Platypus",
+            "value": 1.5499999999999998
+        }
+    ],
+    "correct_order": [
+        "Platypus",
+        "Emperor Penguin",
+        "Western Gorilla",
+        "African Lion",
+        "Asian Elephant"
+    ]
+}
